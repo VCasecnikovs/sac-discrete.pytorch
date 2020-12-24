@@ -8,9 +8,10 @@ from gym import spaces, wrappers
 import cv2
 cv2.ocl.setUseOpenCL(False)
 
-
+#Скипаем пару ходов перед началом действие в эпизоде
 class NoopResetEnv(gym.Wrapper):
     def __init__(self, env, noop_max=30):
+        #
         """
         Sample initial states by taking random number of no-ops on reset.
         No-op is assumed to be action 0.
@@ -40,7 +41,7 @@ class NoopResetEnv(gym.Wrapper):
     def step(self, action):
         return self.env.step(action)
 
-
+#После ресета делаем два шага влева и вправо
 class FireResetEnv(gym.Wrapper):
     def __init__(self, env):
         """
@@ -64,7 +65,7 @@ class FireResetEnv(gym.Wrapper):
     def step(self, action):
         return self.env.step(action)
 
-
+#Заканчиваем эпизод при смерти, но ресетаем при заканчивании всех жизней
 class EpisodicLifeEnv(gym.Wrapper):
     def __init__(self, env):
         """
@@ -106,7 +107,7 @@ class EpisodicLifeEnv(gym.Wrapper):
         self.lives = self.env.unwrapped.ale.lives()
         return obs
 
-
+#Возвращает только каждый 4 шаг
 class MaxAndSkipEnv(gym.Wrapper):
     def __init__(self, env, skip=4):
         """
@@ -149,7 +150,7 @@ class MaxAndSkipEnv(gym.Wrapper):
     def reset(self, **kwargs):
         return self.env.reset(**kwargs)
 
-
+#Изменяяем вознаграждение до -1 0 1
 class ClipRewardEnv(gym.RewardWrapper):
     def __init__(self, env):
         """
@@ -166,6 +167,7 @@ class ClipRewardEnv(gym.RewardWrapper):
         return np.sign(reward)
 
 
+#Превращаем кадр в 84 на 84 точки
 class WarpFramePyTorch(gym.ObservationWrapper):
     def __init__(self, env):
         """
@@ -190,7 +192,7 @@ class WarpFramePyTorch(gym.ObservationWrapper):
             frame, (self.width, self.height), interpolation=cv2.INTER_AREA)
         return frame[None, :, :]
 
-
+#Возвращаем не посдений кадр, а несколько последних кадров
 class FrameStackPyTorch(gym.Wrapper):
     def __init__(self, env, n_frames):
         """Stack n_frames last frames.
@@ -229,7 +231,7 @@ class FrameStackPyTorch(gym.Wrapper):
         assert len(self.frames) == self.n_frames
         return LazyFrames(list(self.frames))
 
-
+#Нормализуем значения входа от 0 до 1, для картинок
 class ScaledFloatFrame(gym.ObservationWrapper):
     def __init__(self, env):
         gym.ObservationWrapper.__init__(self, env)
@@ -242,7 +244,7 @@ class ScaledFloatFrame(gym.ObservationWrapper):
         # with smaller replay buffers only.
         return np.array(observation).astype(np.float32) / 255.0
 
-
+#Создаём буффер кадров и после передаём по одному
 class LazyFrames(object):
     def __init__(self, frames):
         self._frames = frames
@@ -264,7 +266,7 @@ class LazyFrames(object):
     def __getitem__(self, i):
         return self._force()[i]
 
-
+#Создаем atari env, добавляем скип 4 кадров и ресеты энв несколлько раз
 def make_atari(env_id):
     """
     Create a wrapped atari envrionment
@@ -277,7 +279,7 @@ def make_atari(env_id):
     env = MaxAndSkipEnv(env, skip=4)
     return env
 
-
+#Обёртываем deepmind игры, оборачиваем в эпизод == жизнь обрезка вознаграждение, стак кадров и изменение размера
 def wrap_deepmind_pytorch(env, episode_life=True, clip_rewards=True,
                           frame_stack=True, scale=False):
     """
@@ -302,7 +304,7 @@ def wrap_deepmind_pytorch(env, episode_life=True, clip_rewards=True,
         env = FrameStackPyTorch(env, 4)
     return env
 
-
+#создание environment
 def make_pytorch_env(env_id, episode_life=True, clip_rewards=True,
                      frame_stack=True, scale=False):
     env = make_atari(env_id)
@@ -310,7 +312,7 @@ def make_pytorch_env(env_id, episode_life=True, clip_rewards=True,
         env, episode_life, clip_rewards, frame_stack, scale)
     return env
 
-
+#Оборчиваем в монитор
 def wrap_monitor(env, log_dir):
     env = wrappers.Monitor(
         env, log_dir, video_callable=lambda x: True)

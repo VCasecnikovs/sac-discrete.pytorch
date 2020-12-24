@@ -1,0 +1,8 @@
+action <- A(state)   Q-value < -C(action, state)
+
+min(( C(t) - (r(t) + C(t+1) + entropy) ) ^ 2)
+
+Q-value <- C(A(S), state)
+
+max(Q-value)
+
