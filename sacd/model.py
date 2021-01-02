@@ -3,19 +3,20 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.distributions import Categorical
 
-
+#Инициализируем веса, если слой линейный или является свёрткой, если есть bias, то изначально он равен 0
 def initialize_weights_he(m):
     if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
         torch.nn.init.kaiming_uniform_(m.weight)
         if m.bias is not None:
             torch.nn.init.constant_(m.bias, 0)
 
-
+#Выпрямляем слой
 class Flatten(nn.Module):
     def forward(self, x):
         return x.view(x.size(0), -1)
 
 
+#У каждой сети должен быть метод для сохранения и загрузки модели
 class BaseNetwork(nn.Module):
     def save(self, path):
         torch.save(self.state_dict(), path)
@@ -24,6 +25,7 @@ class BaseNetwork(nn.Module):
         self.load_state_dict(torch.load(path))
 
 
+#Базовая модель, которая принимае картинку, и преобразует несколько свёрток, а после выпрямляет веса, не имеет головы
 class DQNBase(BaseNetwork):
 
     def __init__(self, num_channels):
@@ -42,21 +44,24 @@ class DQNBase(BaseNetwork):
     def forward(self, states):
         return self.net(states)
 
-
+#Модель, из DQN и головы
 class QNetwork(BaseNetwork):
 
     def __init__(self, num_channels, num_actions, shared=False,
                  dueling_net=False):
         super().__init__()
 
+        #Если весы не общие то создаем тело
         if not shared:
             self.conv = DQNBase(num_channels)
 
+        #Если не дуэльная сеть, то одна голова
         if not dueling_net:
             self.head = nn.Sequential(
                 nn.Linear(7 * 7 * 64, 512),
                 nn.ReLU(inplace=True),
                 nn.Linear(512, num_actions))
+        #Если дуэль, то стоимость состояние + преимущество каждого действия над другими
         else:
             self.a_head = nn.Sequential(
                 nn.Linear(7 * 7 * 64, 512),
@@ -81,7 +86,7 @@ class QNetwork(BaseNetwork):
             v = self.v_head(states)
             return v + a - a.mean(1, keepdim=True)
 
-
+#Для SAC нам нужны две Q сети, чтобы не было взрыва Q value
 class TwinnedQNetwork(BaseNetwork):
     def __init__(self, num_channels, num_actions, shared=False,
                  dueling_net=False):
@@ -94,7 +99,9 @@ class TwinnedQNetwork(BaseNetwork):
         q2 = self.Q2(states)
         return q1, q2
 
-
+#Точно такая же модель как и QValue, только на выходе мы имеет действия, соответсвенно нет режима преимущества и т.д.
+#Имеет два метода, act выбирает действие, которое имеет самую большую вероятность
+#sample возвращают вероятность каждого действия
 class CateoricalPolicy(BaseNetwork):
 
     def __init__(self, num_channels, num_actions, shared=False):
@@ -109,6 +116,7 @@ class CateoricalPolicy(BaseNetwork):
 
         self.shared = shared
 
+    #Возвращаем индекс действия, которое имеет наибольший вес
     def act(self, states):
         if not self.shared:
             states = self.conv(states)
@@ -118,6 +126,9 @@ class CateoricalPolicy(BaseNetwork):
             action_logits, dim=1, keepdim=True)
         return greedy_actions
 
+    #Считаем софтмакс каждого действия - процент того, что мы должны поступить так
+    #Считаем логарифмы каждой вероятности (нужны ибо у логарифма более оптимальная кривая для оптимизации)
+    #Сэмплим действие на основании процентной вероятности
     def sample(self, states):
         if not self.shared:
             states = self.conv(states)
