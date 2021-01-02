@@ -65,7 +65,7 @@ class BaseAgent(ABC):
         self.log_dir = log_dir
         #Папка куда модель киннем
         self.model_dir = os.path.join(log_dir, 'model')
-        #Папка куда кинем как модель на тренилась
+        #Папка куда кинем как модель натренилась
         self.summary_dir = os.path.join(log_dir, 'summary')
         #Если папок нет, то создаём
         if not os.path.exists(self.model_dir):
@@ -241,7 +241,7 @@ class BaseAgent(ABC):
               f'Episode steps: {episode_steps:<4}  '
               f'Return: {episode_return:<5.1f}')
 
-    #Обычение моделли
+    #Обычение модели
     #Критиков обучаем, чтобы лучше предсказывали q-value
     #Актёра обучаем, чтобы он сильнее всего радовал критиков
     #Также критикам нравится, когда актёр делает действия с большей энтропией
