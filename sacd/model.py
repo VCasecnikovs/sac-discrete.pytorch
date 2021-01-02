@@ -99,10 +99,8 @@ class TwinnedQNetwork(BaseNetwork):
         q2 = self.Q2(states)
         return q1, q2
 
-#Точно такая же модель как и QValue, только на выходе мы имеет действия, соответсвенно нет режима преимущества и т.д.
-#Имеет два метода, act выбирает действие, которое имеет самую большую вероятность
-#sample возвращают вероятность каждого действия
-class CateoricalPolicy(BaseNetwork):
+
+class CategoricalPolicy(BaseNetwork):
 
     def __init__(self, num_channels, num_actions, shared=False):
         super().__init__()

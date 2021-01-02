@@ -15,7 +15,7 @@ class BaseAgent(ABC):
                  target_entropy_ratio=0.98, start_steps=20000,
                  update_interval=4, target_update_interval=8000,
                  use_per=False, num_eval_steps=125000, max_episode_steps=27000,
-                 log_interval=10, eval_interval=1000, cuda=True, seed=0):
+                 log_interval=10, eval_interval=1000, cuda=True, seed=0, render=False):
         super().__init__()
 
         #ENV для обучения
@@ -122,6 +122,8 @@ class BaseAgent(ABC):
         self.log_interval = log_interval
         self.eval_interval = eval_interval
 
+        self.render = render
+
     def run(self):
         #Тренируем эпизоды пока кол-во шагов не будет больше кол-ва шагов обучения
         while True:
@@ -195,6 +197,9 @@ class BaseAgent(ABC):
 
             #Получаем следующее состояние у модели, а также вознаграждение и информацию закончился 
             next_state, reward, done, _ = self.env.step(action)
+
+            if self.render:
+                self.env.render()
 
             # Clip reward to [-1.0, 1.0].
             #Обрезаем вознаграждение, чтобы не выходило за рамки
@@ -326,7 +331,7 @@ class BaseAgent(ABC):
 
                 if self.render:
                     self.test_env.render()
-
+                    
                 num_steps += 1
                 episode_steps += 1
                 episode_return += reward

@@ -4,7 +4,7 @@ import torch
 from torch.optim import Adam
 
 from .base import BaseAgent
-from sacd.model import TwinnedQNetwork, CateoricalPolicy
+from sacd.model import TwinnedQNetwork, CategoricalPolicy
 from sacd.utils import disable_gradients
 
 
@@ -16,22 +16,18 @@ class SacdAgent(BaseAgent):
                  update_interval=4, target_update_interval=8000,
                  use_per=False, dueling_net=False, num_eval_steps=125000,
                  max_episode_steps=27000, log_interval=10, eval_interval=1000,
-<<<<<<< Updated upstream
-                 cuda=True, seed=0):
-=======
                  cuda=True, seed=0, render=False):
 
         #Инциируем sacd rl базу
->>>>>>> Stashed changes
         super().__init__(
             env, test_env, log_dir, num_steps, batch_size, memory_size, gamma,
             multi_step, target_entropy_ratio, start_steps, update_interval,
             target_update_interval, use_per, num_eval_steps, max_episode_steps,
-            log_interval, eval_interval, cuda, seed)
+            log_interval, eval_interval, cuda, seed, render)
 
         #Создаем актёра, которому передаём observation space и action space
         # Define networks.
-        self.policy = CateoricalPolicy(
+        self.policy = CategoricalPolicy(
             self.env.observation_space.shape[0], self.env.action_space.n
             ).to(self.device)
 
@@ -77,8 +73,8 @@ class SacdAgent(BaseAgent):
     #Выбираем случайное из возможных учитывая вес каждого из действий
     def explore(self, state):
         # Act with randomness.
-        state = torch.ByteTensor(
-            state[None, ...]).to(self.device).float() / 255.
+        state = torch.FloatTensor(
+            state[None, ...]).to(self.device) / 255.
         with torch.no_grad():
             action, _, _ = self.policy.sample(state)
         return action.item()
@@ -86,8 +82,8 @@ class SacdAgent(BaseAgent):
     #Выбираем самое наиболее вероятное действие
     def exploit(self, state):
         # Act without randomness.
-        state = torch.ByteTensor(
-            state[None, ...]).to(self.device).float() / 255.
+        state = torch.FloatTensor(
+            state[None, ...]).to(self.device) / 255.
         with torch.no_grad():
             action = self.policy.act(state)
         return action.item()
@@ -158,7 +154,6 @@ class SacdAgent(BaseAgent):
         with torch.no_grad():
             # Q for every actions to calculate expectations of Q.
             q1, q2 = self.online_critic(states)
-            q = torch.min(q1, q2)
 
         #Считаем энтропию как минус сумму вероятности действия на log вероятности
         # Expectations of entropies.
