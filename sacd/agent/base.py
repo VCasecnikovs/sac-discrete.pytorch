@@ -323,13 +323,10 @@ class BaseAgent(ABC):
                 #Получаем действие уже через эксплоит -> среднее 
                 action = self.exploit(state)
                 next_state, reward, done, _ = self.test_env.step(action)
-<<<<<<< Updated upstream
-=======
 
                 if self.render:
                     self.test_env.render()
 
->>>>>>> Stashed changes
                 num_steps += 1
                 episode_steps += 1
                 episode_return += reward
